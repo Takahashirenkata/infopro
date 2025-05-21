@@ -323,16 +323,40 @@ function updateHighlightedWordsList() {
 // Handle vertical scrolling
 let touchStartY = 0;
 let touchEndY = 0;
+let isTouchingControl = false;
+
+// Helper function to check if element is a control
+function isControlElement(element) {
+    return element.closest('.slide-controls') ||
+           element.closest('.top-right-controls') ||
+           element.closest('#hamburgerMenu') ||
+           element.closest('.modal') ||
+           element.closest('.button-group') ||
+           element.classList.contains('word');
+}
 
 slidesContainer.addEventListener('touchstart', e => {
+    // Check if we're touching a control element
+    if (isControlElement(e.target)) {
+        isTouchingControl = true;
+        return;
+    }
+    
     touchStartY = e.touches[0].clientY;
+    isTouchingControl = false;
 });
 
 slidesContainer.addEventListener('touchmove', e => {
+    if (isTouchingControl) return;
     touchEndY = e.touches[0].clientY;
 });
 
 slidesContainer.addEventListener('touchend', () => {
+    if (isTouchingControl) {
+        isTouchingControl = false;
+        return;
+    }
+
     const difference = touchStartY - touchEndY;
     if (Math.abs(difference) > 50) { // Minimum swipe distance
         if (difference > 0) {
