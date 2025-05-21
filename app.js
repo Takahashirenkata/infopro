@@ -233,12 +233,13 @@ function toggleSlideComplete() {
 // Mobile hamburger menu toggle
 const hamburgerButton = hamburgerMenu.querySelector('.hamburger-button');
 const menuContent = hamburgerMenu.querySelector('.menu-content');
+let isMenuOpen = false;
 
 hamburgerButton.addEventListener('click', (e) => {
     e.stopPropagation(); // Prevent event from bubbling up
-    const isOpen = menuContent.classList.contains('toggled');
+    e.preventDefault(); // Prevent any default behavior
     
-    if (isOpen) {
+    if (isMenuOpen) {
         closeHamburgerMenu();
     } else {
         openHamburgerMenu();
@@ -247,7 +248,7 @@ hamburgerButton.addEventListener('click', (e) => {
 
 // Close menu when clicking outside
 document.addEventListener('click', (e) => {
-    if (!hamburgerMenu.contains(e.target)) {
+    if (!hamburgerMenu.contains(e.target) && isMenuOpen) {
         closeHamburgerMenu();
     }
 });
@@ -260,11 +261,13 @@ menuContent.addEventListener('click', (e) => {
 function openHamburgerMenu() {
     menuContent.classList.add('toggled');
     hamburgerButton.classList.add('active');
+    isMenuOpen = true;
 }
 
 function closeHamburgerMenu() {
     menuContent.classList.remove('toggled');
     hamburgerButton.classList.remove('active');
+    isMenuOpen = false;
 }
 
 // Add close hamburger menu when starting to swipe between slides
