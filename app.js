@@ -387,82 +387,64 @@ function isControlElement(element) {
            element.classList.contains('word');
 }
 
-// For mobile scroll events
-let touchStartY = 0;
-let touchStartX = 0;
-let touchEndY = 0;
-let touchEndX = 0;
+// Mobile touch handling
+let touchStartY = null;
 
 slidesContainer.addEventListener('touchstart', (e) => {
-    // Store the initial touch coordinates
-    touchStartY = e.touches[0].clientY;
-    touchStartX = e.touches[0].clientX;
-    
-    // Only close hamburger menu on touch if not touching a control element
-    if (!isControlElement(e.target)) {
-        closeHamburgerMenu();
-    }
-}, { passive: true });
-
-slidesContainer.addEventListener('touchmove', (e) => {
-    // Don't prevent default for control elements to allow normal scrolling
-    if (isControlElement(e.target)) {
+    if (commentModal.classList.contains('active') || editModal.classList.contains('active')) {
         return;
     }
-    
-    // Prevent default scroll behavior
-    e.preventDefault();
-    
-    // Update end coordinates as finger moves
-    touchEndY = e.touches[0].clientY;
-    touchEndX = e.touches[0].clientX;
-}, { passive: false });
+    touchStartY = e.touches[0].clientY;
+}, { passive: true });
 
 slidesContainer.addEventListener('touchend', (e) => {
-    // Don't handle swipes on control elements
-    if (isControlElement(e.target)) {
-        return;
-    }
+    if (touchStartY === null) return;
     
-    // Calculate swipe distance
+    const touchEndY = e.changedTouches[0].clientY;
     const deltaY = touchStartY - touchEndY;
-    const deltaX = touchStartX - touchEndX;
     
-    // Only process if it's a significant vertical swipe (more vertical than horizontal)
-    const swipeThreshold = 50; // minimum swipe distance in pixels
-    const isVerticalSwipe = Math.abs(deltaY) > Math.abs(deltaX);
+    // Reset touch start
+    touchStartY = null;
     
-    if (isVerticalSwipe && Math.abs(deltaY) >= swipeThreshold) {
-        const now = Date.now();
-        if (now - lastScrollTime < 500 || isScrolling) return;
-        
-        isScrolling = true;
-        lastScrollTime = now;
-        
-        if (deltaY > 0) {
-            // Swipe up - next slide
-            if (state.currentSlideIndex < state.slides.length - 1) {
-                state.currentSlideIndex++;
-                renderCurrentSlide();
-                saveCurrentState();
-            } else {
-                checkSessionEnd();
-            }
+    // Minimum distance for swipe
+    if (Math.abs(deltaY) < 30) return;
+    
+    // Check timing constraints
+    const now = Date.now();
+    if (now - lastScrollTime < 500 || isScrolling) return;
+    
+    isScrolling = true;
+    lastScrollTime = now;
+    
+    if (deltaY > 0) {
+        // Swipe up - next slide
+        if (state.currentSlideIndex < state.slides.length - 1) {
+            state.currentSlideIndex++;
+            renderCurrentSlide();
+            saveCurrentState();
         } else {
-            // Swipe down - previous slide
-            if (state.currentSlideIndex > 0) {
-                state.currentSlideIndex--;
-                renderCurrentSlide();
-                saveCurrentState();
-            }
+            checkSessionEnd();
         }
-        
-        // Reset scrolling flag after animation
-        setTimeout(() => {
-            isScrolling = false;
-        }, 500);
+    } else {
+        // Swipe down - previous slide
+        if (state.currentSlideIndex > 0) {
+            state.currentSlideIndex--;
+            renderCurrentSlide();
+            saveCurrentState();
+        }
     }
-}, { passive: true });
+    
+    setTimeout(() => {
+        isScrolling = false;
+    }, 500);
+});
+
+// Prevent default touch move behavior to avoid page scrolling
+slidesContainer.addEventListener('touchmove', (e) => {
+    if (touchStartY !== null && !isControlElement(e.target)) {
+        e.preventDefault();
+    }
+}, { passive: false });
 
 // Handle mouse wheel scrolling
 function handleScroll(e) {
