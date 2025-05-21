@@ -234,22 +234,52 @@ function toggleSlideComplete() {
 const hamburgerButton = hamburgerMenu.querySelector('.hamburger-button');
 const menuContent = hamburgerMenu.querySelector('.menu-content');
 
-hamburgerButton.addEventListener('click', () => {
-    menuContent.classList.toggle('toggled');
-    hamburgerButton.classList.toggle('active');
+hamburgerButton.addEventListener('click', (e) => {
+    e.stopPropagation(); // Prevent event from bubbling up
+    const isOpen = menuContent.classList.contains('toggled');
+    
+    if (isOpen) {
+        closeHamburgerMenu();
+    } else {
+        openHamburgerMenu();
+    }
 });
 
 // Close menu when clicking outside
 document.addEventListener('click', (e) => {
     if (!hamburgerMenu.contains(e.target)) {
-        menuContent.classList.remove('toggled');
-        hamburgerButton.classList.remove('active');
+        closeHamburgerMenu();
     }
 });
 
-// Prevent menu from closing when clicking inside it
+// Prevent menu from closing when clicking inside menu content
 menuContent.addEventListener('click', (e) => {
     e.stopPropagation();
+});
+
+function openHamburgerMenu() {
+    menuContent.classList.add('toggled');
+    hamburgerButton.classList.add('active');
+}
+
+function closeHamburgerMenu() {
+    menuContent.classList.remove('toggled');
+    hamburgerButton.classList.remove('active');
+}
+
+// Add close hamburger menu when starting to swipe between slides
+slidesContainer.addEventListener('touchstart', e => {
+    // Check if we're touching a control element
+    if (isControlElement(e.target)) {
+        isTouchingControl = true;
+        return;
+    }
+    
+    // Close hamburger menu when starting to swipe
+    closeHamburgerMenu();
+    
+    touchStartY = e.touches[0].clientY;
+    isTouchingControl = false;
 });
 
 // Show slides view
@@ -334,17 +364,6 @@ function isControlElement(element) {
            element.closest('.button-group') ||
            element.classList.contains('word');
 }
-
-slidesContainer.addEventListener('touchstart', e => {
-    // Check if we're touching a control element
-    if (isControlElement(e.target)) {
-        isTouchingControl = true;
-        return;
-    }
-    
-    touchStartY = e.touches[0].clientY;
-    isTouchingControl = false;
-});
 
 slidesContainer.addEventListener('touchmove', e => {
     if (isTouchingControl) return;
