@@ -366,36 +366,23 @@ h1 span::after {
     border-bottom: 2px solid #F1F5F9;
 }
 
-/* Show menu on hover for desktop only */
-@media (hover: hover) and (pointer: fine) {
-    #hamburgerMenu:hover .menu-content:not(.toggled) {
-        display: block;
-    }
+/* Remove hover-based menu display completely */
+#hamburgerMenu:hover .menu-content {
+    display: none;
 }
 
-/* Show menu when toggled (for both mobile and desktop) */
+/* Show menu only when explicitly toggled */
 .menu-content.toggled {
     display: block;
 }
 
-/* Remove hover styles on touch devices */
-@media (hover: none) {
-    #hamburgerMenu:hover .menu-content {
-        display: none;
-    }
-    
-    #hamburgerMenu .menu-content.toggled {
-        display: block;
-    }
-}
-
-/* Active state for hamburger button */
+/* Active state for the hamburger button */
 .hamburger-button.active {
     background-color: var(--primary-color) !important;
     color: white !important;
 }
 
-/* Ensure menu content is properly positioned on mobile */
+/* Mobile specific menu styles */
 @media (max-width: 768px) {
     .menu-content {
         position: fixed;
@@ -415,16 +402,14 @@ h1 span::after {
         animation: slideUpMobile 0.3s ease-out;
     }
 
-    @keyframes slideUpMobile {
-        from { transform: translateY(100%); }
-        to { transform: translateY(0); }
+    /* Remove any hover-based interactions on mobile */
+    #hamburgerMenu:hover .menu-content {
+        display: none;
     }
-}
 
-/* Remove old hover-based menu display */
-#hamburgerMenu:hover .menu-content,
-.menu-content.active {
-    display: none;
+    #hamburgerMenu .menu-content.toggled {
+        display: block;
+    }
 }
 
 #highlightedWordsList {
