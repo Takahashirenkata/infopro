@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>infoPRO</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Landing Page -->
+    <div id="landingPage" class="page active">
+        <div class="container">
+            <div class="logo-container">
+                <h1>info<span>PRO</span></h1>
+                <p class="tagline">Transform your text into organized insights</p>
+            </div>
+            <div class="input-container">
+                <div id="newSession" class="session-section active">
+                    <textarea id="textInput" placeholder="Enter your text here..."></textarea>
+                    <div class="button-group">
+                        <input type="file" id="importFile" accept=".json" style="display: none;">
+                        <button id="importButton" class="btn btn-secondary">
+                            <i class="fas fa-file-import"></i> Import JSON
+                        </button>
+                        <button id="processButton" class="btn btn-primary">
+                            <i class="fas fa-play"></i> Process the Info
+                        </button>
+                    </div>
+                </div>
+                <div id="resumeSession" class="session-section">
+                    <div class="session-info">
+                        <div class="info-item">
+                            <span class="label">Slides:</span>
+                            <span id="slideCount" class="value">0</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Highlighted Words:</span>
+                            <span id="wordCount" class="value">0</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Last Position:</span>
+                            <span id="lastPosition" class="value">-</span>
+                        </div>
+                    </div>
+                    <div class="button-group">
+                        <button id="newButton" class="btn btn-secondary">
+                            <i class="fas fa-plus"></i> New Session
+                        </button>
+                        <button id="resumeButton" class="btn btn-primary">
+                            <i class="fas fa-arrow-right"></i> Resume Session
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slides Container -->
+    <div id="slidesContainer" class="page">
+        <!-- Slides will be dynamically added here -->
+        
+        <!-- Top Right Controls -->
+        <div class="top-right-controls">
+            <button id="endSessionButton" class="icon-button glass-effect" title="End Session">
+                <i class="fas fa-power-off"></i>
+            </button>
+            <button id="saveButton" class="icon-button glass-effect" title="Save Session">
+                <i class="fas fa-save"></i>
+            </button>
+        </div>
+
+        <!-- Hamburger Menu -->
+        <div id="hamburgerMenu" class="bottom-left">
+            <button class="hamburger-button glass-effect">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="menu-content glass-effect">
+                <h3>Highlighted Words</h3>
+                <ul id="highlightedWordsList"></ul>
+            </div>
+        </div>
+
+        <!-- Slide Controls -->
+        <div class="slide-controls bottom-right">
+            <button id="editSlideButton" class="icon-button glass-effect" title="Edit Slide">
+                <i class="fas fa-edit"></i>
+            </button>
+            <button id="commentSlideButton" class="icon-button glass-effect" title="Add Comment">
+                <i class="fas fa-comment"></i>
+            </button>
+            <button id="deleteSlideButton" class="icon-button glass-effect" title="Delete Slide">
+                <i class="fas fa-trash"></i>
+            </button>
+            <button id="addSlideButton" class="icon-button glass-effect" title="Add Slide">
+                <i class="fas fa-plus"></i>
+            </button>
+            <button id="toggleCompleteButton" class="icon-button glass-effect" title="Toggle Complete">
+                <i class="far fa-circle"></i>
+            </button>
+        </div>
+
+        <!-- Edit Modal -->
+        <div id="editModal" class="modal">
+            <div class="modal-content glass-effect">
+                <h3>Edit Slide</h3>
+                <textarea id="editInput" placeholder="Edit slide content..."></textarea>
+                <div class="modal-actions">
+                    <button id="saveEditButton" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                    <button id="closeEditButton" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Comment Modal -->
+        <div id="commentModal" class="modal">
+            <div class="modal-content glass-effect">
+                <h3>Slide Comment</h3>
+                <textarea id="commentInput" placeholder="Enter your comment here..."></textarea>
+                <div class="modal-actions">
+                    <button id="saveCommentButton" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Comment
+                    </button>
+                    <button id="closeCommentButton" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Page -->
+    <div id="summaryPage" class="page">
+        <div class="summary-container">
+            <h2>Session Summary</h2>
+            <div class="summary-content">
+                <div class="highlighted-words-summary">
+                    <h3>Your Highlighted Words</h3>
+                    <div id="summaryWordsList" class="words-grid"></div>
+                </div>
+                <div class="comments-summary">
+                    <h3>Your Comments</h3>
+                    <div id="summaryCommentsList" class="comments-list"></div>
+                </div>
+            </div>
+            <div class="summary-actions">
+                <button id="backToLandingButton" class="btn btn-primary">
+                    <i class="fas fa-home"></i> Back to Home
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html> 
