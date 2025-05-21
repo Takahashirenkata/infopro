@@ -366,7 +366,7 @@ h1 span::after {
     border-bottom: 2px solid #F1F5F9;
 }
 
-/* Show menu on hover for desktop only if not toggled */
+/* Show menu on hover for desktop only */
 @media (hover: hover) and (pointer: fine) {
     #hamburgerMenu:hover .menu-content:not(.toggled) {
         display: block;
@@ -387,14 +387,12 @@ h1 span::after {
     #hamburgerMenu .menu-content.toggled {
         display: block;
     }
+}
 
-    .hamburger-button:hover {
-        transform: none;
-    }
-
-    #highlightedWordsList li:hover {
-        transform: none;
-    }
+/* Active state for hamburger button */
+.hamburger-button.active {
+    background-color: var(--primary-color) !important;
+    color: white !important;
 }
 
 /* Ensure menu content is properly positioned on mobile */
@@ -423,14 +421,10 @@ h1 span::after {
     }
 }
 
-.hamburger-button.active {
-    background-color: var(--primary-color) !important;
-    color: white !important;
-}
-
+/* Remove old hover-based menu display */
 #hamburgerMenu:hover .menu-content,
 .menu-content.active {
-    display: block;
+    display: none;
 }
 
 #highlightedWordsList {
