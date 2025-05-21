@@ -267,6 +267,21 @@ function closeHamburgerMenu() {
     hamburgerButton.classList.remove('active');
 }
 
+// Add close hamburger menu when starting to swipe between slides
+slidesContainer.addEventListener('touchstart', e => {
+    // Check if we're touching a control element
+    if (isControlElement(e.target)) {
+        isTouchingControl = true;
+        return;
+    }
+    
+    // Close hamburger menu when starting to swipe
+    closeHamburgerMenu();
+    
+    touchStartY = e.touches[0].clientY;
+    isTouchingControl = false;
+});
+
 // Show slides view
 function showSlides() {
     landingPage.classList.remove('active');
@@ -374,8 +389,9 @@ function updateHighlightedWordsList() {
 }
 
 // Handle vertical scrolling
-let lastScrollTime = 0;
-let isScrolling = false;
+let touchStartY = 0;
+let touchEndY = 0;
+let isTouchingControl = false;
 
 // Helper function to check if element is a control
 function isControlElement(element) {
@@ -387,8 +403,40 @@ function isControlElement(element) {
            element.classList.contains('word');
 }
 
-// Remove old touch event listeners and add new scroll handling
-function handleScroll(e) {
+slidesContainer.addEventListener('touchmove', e => {
+    if (isTouchingControl) return;
+    touchEndY = e.touches[0].clientY;
+});
+
+slidesContainer.addEventListener('touchend', () => {
+    if (isTouchingControl) {
+        isTouchingControl = false;
+        return;
+    }
+
+    const difference = touchStartY - touchEndY;
+    if (Math.abs(difference) > 50) { // Minimum swipe distance
+        if (difference > 0) {
+            // Swipe up - next slide
+            if (state.currentSlideIndex < state.slides.length - 1) {
+                state.currentSlideIndex++;
+                renderCurrentSlide();
+                saveCurrentState();
+            } else {
+                checkSessionEnd();
+            }
+        } else if (difference < 0 && state.currentSlideIndex > 0) {
+            // Swipe down - previous slide
+            state.currentSlideIndex--;
+            renderCurrentSlide();
+            saveCurrentState();
+        }
+    }
+});
+
+// Handle mouse wheel scrolling
+let wheelTimeout;
+slidesContainer.addEventListener('wheel', (e) => {
     // Check if the scroll event originated from within the hamburger menu or any modal
     if (hamburgerMenu.contains(e.target) || 
         commentModal.classList.contains('active') || 
@@ -396,61 +444,27 @@ function handleScroll(e) {
         return; // Do nothing if scrolling inside hamburger menu or modals are active
     }
 
-    // Prevent default scroll behavior
-    e.preventDefault();
-
-    // Throttle scroll events
-    const now = Date.now();
-    if (now - lastScrollTime < 500 || isScrolling) return; // 500ms throttle
-    
-    isScrolling = true;
-    lastScrollTime = now;
-
-    const delta = e.deltaY || e.detail || -e.wheelDelta;
-
-    if (delta > 0) {
-        // Scroll down - next slide
-        if (state.currentSlideIndex < state.slides.length - 1) {
-            state.currentSlideIndex++;
+    clearTimeout(wheelTimeout);
+    wheelTimeout = setTimeout(() => {
+        if (e.deltaY > 0) {
+            // Scroll down - next slide
+            if (state.currentSlideIndex < state.slides.length - 1) {
+                state.currentSlideIndex++;
+                renderCurrentSlide();
+                saveCurrentState();
+            } else {
+                checkSessionEnd();
+            }
+        } else if (e.deltaY < 0 && state.currentSlideIndex > 0) {
+            // Scroll up - previous slide
+            state.currentSlideIndex--;
             renderCurrentSlide();
             saveCurrentState();
-        } else {
-            checkSessionEnd();
         }
-    } else if (delta < 0 && state.currentSlideIndex > 0) {
-        // Scroll up - previous slide
-        state.currentSlideIndex--;
-        renderCurrentSlide();
-        saveCurrentState();
-    }
+    }, 50); // Debounce scroll events
+});
 
-    // Reset scrolling flag after animation
-    setTimeout(() => {
-        isScrolling = false;
-    }, 500);
-}
-
-// Add event listeners for all scroll events
-slidesContainer.addEventListener('wheel', handleScroll, { passive: false });
-slidesContainer.addEventListener('mousewheel', handleScroll, { passive: false });
-slidesContainer.addEventListener('DOMMouseScroll', handleScroll, { passive: false });
-
-// For mobile scroll events
-slidesContainer.addEventListener('touchstart', (e) => {
-    // Only close hamburger menu on touch
-    if (!isControlElement(e.target)) {
-        closeHamburgerMenu();
-    }
-}, { passive: true });
-
-// Prevent default scroll behavior on mobile
-slidesContainer.addEventListener('touchmove', (e) => {
-    if (!isControlElement(e.target)) {
-        e.preventDefault();
-    }
-}, { passive: false });
-
-// Update keyboard navigation to use the same timing constraints
+// Handle keyboard navigation
 document.addEventListener('keydown', (e) => {
     // Don't handle keyboard navigation when any modal is active
     if (commentModal.classList.contains('active') || editModal.classList.contains('active')) {
@@ -473,13 +487,6 @@ document.addEventListener('keydown', (e) => {
     if (['Space', 'Enter', 'Backspace', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
         e.preventDefault();
     }
-
-    // Apply the same timing constraints as scroll
-    const now = Date.now();
-    if (now - lastScrollTime < 500 || isScrolling) return;
-    
-    isScrolling = true;
-    lastScrollTime = now;
 
     switch (e.code) {
         // Forward navigation
@@ -507,11 +514,6 @@ document.addEventListener('keydown', (e) => {
             }
             break;
     }
-
-    // Reset scrolling flag after animation
-    setTimeout(() => {
-        isScrolling = false;
-    }, 500);
 });
 
 // Import session
