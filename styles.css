@@ -980,4 +980,74 @@ h1 span::after {
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
     background: linear-gradient(120deg, #FEF9C3 0%, #FEF08A 100%);
+}
+
+/* Mobile Touch Device Optimizations */
+@media (hover: none) {
+    /* Remove button hover effects */
+    .btn:hover {
+        transform: none;
+    }
+    
+    .btn-primary:hover {
+        box-shadow: var(--shadow-md);
+    }
+    
+    .btn-secondary:hover {
+        border-color: #E2E8F0;
+        color: var(--secondary-color);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    /* Remove word hover effects */
+    .word:hover {
+        background-color: transparent;
+        transform: none;
+    }
+    
+    /* Remove icon button hover effects */
+    .icon-button:hover {
+        transform: none;
+        color: var(--secondary-color);
+        box-shadow: var(--shadow-md);
+    }
+    
+    /* Remove hamburger menu hover effects */
+    #hamburgerMenu:hover .menu-content {
+        display: none;
+    }
+    
+    .hamburger-button:hover {
+        transform: none;
+    }
+    
+    /* Remove list item hover effects */
+    #highlightedWordsList li:hover {
+        background-color: transparent;
+        color: var(--text-secondary);
+        transform: none;
+    }
+    
+    /* Remove special button hover effects */
+    #endSessionButton:hover,
+    #deleteSlideButton:hover,
+    #commentSlideButton:hover,
+    #editSlideButton:hover {
+        background-color: white !important;
+        color: inherit;
+        transform: none;
+    }
+    
+    /* Remove summary word hover effects */
+    .summary-word:hover {
+        transform: none;
+        box-shadow: var(--shadow-sm);
+        background: white;
+    }
+    
+    /* Ensure scrollbar hover states are removed */
+    #highlightedWordsList::-webkit-scrollbar-thumb:hover,
+    .summary-container::-webkit-scrollbar-thumb:hover {
+        background: #CBD5E1;
+    }
 } 
