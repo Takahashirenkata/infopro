@@ -366,23 +366,38 @@ h1 span::after {
     border-bottom: 2px solid #F1F5F9;
 }
 
-/* Remove hover-based menu display completely */
-#hamburgerMenu:hover .menu-content {
-    display: none;
+/* Show menu on hover for desktop only if not toggled */
+@media (hover: hover) and (pointer: fine) {
+    #hamburgerMenu:hover .menu-content:not(.toggled) {
+        display: block;
+    }
 }
 
-/* Show menu only when explicitly toggled */
+/* Show menu when toggled (for both mobile and desktop) */
 .menu-content.toggled {
     display: block;
 }
 
-/* Active state for the hamburger button */
-.hamburger-button.active {
-    background-color: var(--primary-color) !important;
-    color: white !important;
+/* Remove hover styles on touch devices */
+@media (hover: none) {
+    #hamburgerMenu:hover .menu-content {
+        display: none;
+    }
+    
+    #hamburgerMenu .menu-content.toggled {
+        display: block;
+    }
+
+    .hamburger-button:hover {
+        transform: none;
+    }
+
+    #highlightedWordsList li:hover {
+        transform: none;
+    }
 }
 
-/* Mobile specific menu styles */
+/* Ensure menu content is properly positioned on mobile */
 @media (max-width: 768px) {
     .menu-content {
         position: fixed;
@@ -402,14 +417,20 @@ h1 span::after {
         animation: slideUpMobile 0.3s ease-out;
     }
 
-    /* Remove any hover-based interactions on mobile */
-    #hamburgerMenu:hover .menu-content {
-        display: none;
+    @keyframes slideUpMobile {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
     }
+}
 
-    #hamburgerMenu .menu-content.toggled {
-        display: block;
-    }
+.hamburger-button.active {
+    background-color: var(--primary-color) !important;
+    color: white !important;
+}
+
+#hamburgerMenu:hover .menu-content,
+.menu-content.active {
+    display: block;
 }
 
 #highlightedWordsList {
