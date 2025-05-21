@@ -267,7 +267,23 @@ function closeHamburgerMenu() {
     hamburgerButton.classList.remove('active');
 }
 
-// Add close hamburger menu when starting to swipe between slides
+// Handle vertical scrolling
+let touchStartY = 0;
+let touchEndY = 0;
+let isTouchingControl = false;
+
+// Helper function to check if element is a control
+function isControlElement(element) {
+    return element.closest('.slide-controls') ||
+           element.closest('.top-right-controls') ||
+           element.closest('#hamburgerMenu') ||
+           element.closest('.modal') ||
+           element.closest('.button-group') ||
+           element.classList.contains('word');
+}
+
+// Remove touch event listeners for slide navigation
+// Only keep the one needed for hamburger menu
 slidesContainer.addEventListener('touchstart', e => {
     // Check if we're touching a control element
     if (isControlElement(e.target)) {
@@ -275,10 +291,9 @@ slidesContainer.addEventListener('touchstart', e => {
         return;
     }
     
-    // Close hamburger menu when starting to swipe
+    // Close hamburger menu when touching the slide
     closeHamburgerMenu();
     
-    touchStartY = e.touches[0].clientY;
     isTouchingControl = false;
 });
 
@@ -387,52 +402,6 @@ function updateHighlightedWordsList() {
         highlightedWordsList.appendChild(li);
     });
 }
-
-// Handle vertical scrolling
-let touchStartY = 0;
-let touchEndY = 0;
-let isTouchingControl = false;
-
-// Helper function to check if element is a control
-function isControlElement(element) {
-    return element.closest('.slide-controls') ||
-           element.closest('.top-right-controls') ||
-           element.closest('#hamburgerMenu') ||
-           element.closest('.modal') ||
-           element.closest('.button-group') ||
-           element.classList.contains('word');
-}
-
-slidesContainer.addEventListener('touchmove', e => {
-    if (isTouchingControl) return;
-    touchEndY = e.touches[0].clientY;
-});
-
-slidesContainer.addEventListener('touchend', () => {
-    if (isTouchingControl) {
-        isTouchingControl = false;
-        return;
-    }
-
-    const difference = touchStartY - touchEndY;
-    if (Math.abs(difference) > 50) { // Minimum swipe distance
-        if (difference > 0) {
-            // Swipe up - next slide
-            if (state.currentSlideIndex < state.slides.length - 1) {
-                state.currentSlideIndex++;
-                renderCurrentSlide();
-                saveCurrentState();
-            } else {
-                checkSessionEnd();
-            }
-        } else if (difference < 0 && state.currentSlideIndex > 0) {
-            // Swipe down - previous slide
-            state.currentSlideIndex--;
-            renderCurrentSlide();
-            saveCurrentState();
-        }
-    }
-});
 
 // Handle mouse wheel scrolling
 let wheelTimeout;
