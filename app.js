@@ -291,32 +291,73 @@ function showSlides() {
 
 // Render current slide
 function renderCurrentSlide() {
-    // Remove existing slides
-    const existingSlides = slidesContainer.querySelectorAll('.slide');
-    existingSlides.forEach(slide => slide.remove());
+    // Keep track of existing slides
+    const existingSlides = Array.from(slidesContainer.querySelectorAll('.slide'));
+    
+    // Create new slide if it doesn't exist
+    const currentSlide = existingSlides.find(slide => 
+        slide.dataset.index === state.currentSlideIndex.toString()
+    ) || createSlide(state.currentSlideIndex);
+    
+    // Update slide positions
+    existingSlides.forEach(slide => {
+        const slideIndex = parseInt(slide.dataset.index);
+        if (slideIndex < state.currentSlideIndex) {
+            slide.className = 'slide previous';
+        } else if (slideIndex === state.currentSlideIndex) {
+            slide.className = `slide current${state.slides[slideIndex].completed ? ' completed' : ''}`;
+        } else {
+            slide.className = 'slide next';
+        }
+    });
 
-    if (state.slides.length === 0) return;
+    // Clean up slides that are too far from current (keep only adjacent slides)
+    existingSlides.forEach(slide => {
+        const slideIndex = parseInt(slide.dataset.index);
+        if (Math.abs(slideIndex - state.currentSlideIndex) > 1) {
+            slide.remove();
+        }
+    });
 
+    // Create adjacent slides if they don't exist
+    if (state.currentSlideIndex > 0) {
+        const prevIndex = state.currentSlideIndex - 1;
+        if (!slidesContainer.querySelector(`[data-index="${prevIndex}"]`)) {
+            createSlide(prevIndex);
+        }
+    }
+    if (state.currentSlideIndex < state.slides.length - 1) {
+        const nextIndex = state.currentSlideIndex + 1;
+        if (!slidesContainer.querySelector(`[data-index="${nextIndex}"]`)) {
+            createSlide(nextIndex);
+        }
+    }
+}
+
+// Helper function to create a slide
+function createSlide(index) {
     const slide = document.createElement('div');
-    slide.className = `slide${state.slides[state.currentSlideIndex].completed ? ' completed' : ''}`;
+    slide.className = index < state.currentSlideIndex ? 'slide previous' : 
+                     index === state.currentSlideIndex ? 'slide current' : 'slide next';
+    slide.dataset.index = index;
 
     const slideNumber = document.createElement('div');
     slideNumber.className = 'slide-number';
-    slideNumber.textContent = `${state.currentSlideIndex + 1}/${state.slides.length}`;
+    slideNumber.textContent = `${index + 1}/${state.slides.length}`;
 
     const content = document.createElement('div');
     content.className = 'slide-content';
     
     // Split sentence into clickable words
-    const words = state.slides[state.currentSlideIndex].text.split(/\s+/);
-    words.forEach((word, index) => {
+    const words = state.slides[index].text.split(/\s+/);
+    words.forEach((word, wordIndex) => {
         const wordSpan = document.createElement('span');
         wordSpan.className = `word${state.highlightedWords.has(word) ? ' highlighted' : ''}`;
         wordSpan.textContent = word;
         wordSpan.addEventListener('click', () => toggleHighlight(word));
         content.appendChild(wordSpan);
         
-        if (index < words.length - 1) {
+        if (wordIndex < words.length - 1) {
             content.appendChild(document.createTextNode(' '));
         }
     });
@@ -325,7 +366,7 @@ function renderCurrentSlide() {
     slide.appendChild(content);
 
     // Add comment indicator if slide has a comment
-    if (state.comments[state.currentSlideIndex]) {
+    if (state.comments[index]) {
         const commentIndicator = document.createElement('div');
         commentIndicator.className = 'comment-indicator';
         commentIndicator.innerHTML = '<i class="fas fa-comment"></i>';
@@ -333,10 +374,7 @@ function renderCurrentSlide() {
     }
 
     slidesContainer.appendChild(slide);
-
-    // Update toggle complete button icon
-    const toggleIcon = toggleCompleteButton.querySelector('i');
-    toggleIcon.className = state.slides[state.currentSlideIndex].completed ? 'fas fa-minus' : 'far fa-circle';
+    return slide;
 }
 
 // Update highlighted words list
