@@ -1,3 +1,16 @@
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(registration => {
+                console.log('ServiceWorker registration successful');
+            })
+            .catch(err => {
+                console.log('ServiceWorker registration failed: ', err);
+            });
+    });
+}
+
 // Initialize fullscreen mode
 function initFullscreen() {
     // Request fullscreen mode when the app starts
@@ -20,6 +33,29 @@ function initFullscreen() {
             }, { once: true }); // Only trigger once
         }
     });
+
+    // Handle screen orientation changes
+    if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('portrait')
+            .catch(err => console.log('Orientation lock failed:', err));
+    }
+
+    // Handle Android Chrome's system UI
+    if (navigator.userAgent.includes('Android')) {
+        window.addEventListener('load', () => {
+            // Add padding for system UI
+            document.body.style.paddingTop = 'env(safe-area-inset-top)';
+            document.body.style.paddingBottom = 'env(safe-area-inset-bottom)';
+        });
+
+        // Reapply fullscreen on resize
+        window.addEventListener('resize', () => {
+            if (document.fullscreenElement === null) {
+                document.documentElement.requestFullscreen()
+                    .catch(err => console.log('Fullscreen request failed:', err));
+            }
+        });
+    }
 }
 
 // Call initialization
