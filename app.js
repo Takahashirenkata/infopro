@@ -199,16 +199,27 @@ function processText() {
     showSlides();
 }
 
-// Add state saving to relevant functions
+// Update toggleHighlight function to rerender the current slide
 function toggleHighlight(word) {
     if (state.highlightedWords.has(word)) {
         state.highlightedWords.delete(word);
     } else {
         state.highlightedWords.add(word);
     }
-    saveCurrentState();
+    
+    // Update all instances of this word in the current slide
+    const currentSlide = document.querySelector('.slide.current');
+    if (currentSlide) {
+        const wordElements = currentSlide.querySelectorAll('.word');
+        wordElements.forEach(wordElement => {
+            if (wordElement.textContent === word) {
+                wordElement.classList.toggle('highlighted', state.highlightedWords.has(word));
+            }
+        });
+    }
+    
     updateHighlightedWordsList();
-    renderCurrentSlide();
+    saveCurrentState();
 }
 
 function addNewSlide() {
@@ -333,42 +344,256 @@ function createSlide(index) {
     const content = document.createElement('div');
     content.className = 'slide-content';
     
-    // Split sentence into clickable words
+    // Split sentence into words
     const words = state.slides[index].text.split(/\s+/);
-    words.forEach((word, wordIndex) => {
-        const wordSpan = document.createElement('span');
-        wordSpan.className = `word${state.highlightedWords.has(word) ? ' highlighted' : ''}`;
-        wordSpan.textContent = word;
+    
+    // Calculate number of pages needed (15 words per page)
+    const wordsPerPage = 15;
+    const pages = [];
+    for (let i = 0; i < words.length; i += wordsPerPage) {
+        pages.push(words.slice(i, i + wordsPerPage));
+    }
+    
+    // Create horizontal slider container
+    const sliderContainer = document.createElement('div');
+    sliderContainer.className = 'horizontal-slider-container';
+    
+    // Create slider for words
+    const slider = document.createElement('div');
+    slider.className = 'horizontal-slider';
+    slider.style.width = `${pages.length * 100}%`;
+    
+    // Create pages
+    pages.forEach((pageWords, pageIndex) => {
+        const page = document.createElement('div');
+        page.className = 'word-page';
+        page.style.width = `${100 / pages.length}%`;
         
-        // Add both click and touch events for highlighting
-        const handleHighlight = (e) => {
-            e.preventDefault(); // Prevent any default behavior
-            e.stopPropagation(); // Stop event from bubbling up to slide container
-            toggleHighlight(word);
-        };
+        pageWords.forEach((word, wordIndex) => {
+            const wordSpan = document.createElement('span');
+            // Set initial highlight state based on state.highlightedWords
+            wordSpan.className = `word${state.highlightedWords.has(word) ? ' highlighted' : ''}`;
+            wordSpan.textContent = word;
+            wordSpan.dataset.word = word; // Add word data attribute for easier reference
+            
+            let touchStartTime = 0;
+            let isTouchMove = false;
+            
+            // Handle touch events
+            wordSpan.addEventListener('touchstart', (e) => {
+                touchStartTime = Date.now();
+                isTouchMove = false;
+                e.stopPropagation();
+            }, { passive: true });
+
+            wordSpan.addEventListener('touchmove', () => {
+                isTouchMove = true;
+            }, { passive: true });
+
+            wordSpan.addEventListener('touchend', (e) => {
+                // Only toggle highlight if:
+                // 1. Touch duration was less than 300ms (to differentiate from scrolling)
+                // 2. The touch didn't move (to differentiate from swiping)
+                if (Date.now() - touchStartTime < 300 && !isTouchMove) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleHighlight(word);
+                }
+            }, { passive: false });
+
+            // Handle mouse events
+            wordSpan.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleHighlight(word);
+            });
+            
+            page.appendChild(wordSpan);
+            if (wordIndex < pageWords.length - 1) {
+                page.appendChild(document.createTextNode(' '));
+            }
+        });
         
-        // Add click event for desktop
-        wordSpan.addEventListener('click', handleHighlight);
-        
-        // Add touch events for mobile
-        wordSpan.addEventListener('touchstart', (e) => {
-            e.preventDefault(); // Prevent default touch behavior
-            e.stopPropagation(); // Stop event from bubbling up
-        }, { passive: false });
-        
-        wordSpan.addEventListener('touchend', handleHighlight, { passive: false });
-        
-        content.appendChild(wordSpan);
-        
-        if (wordIndex < words.length - 1) {
-            content.appendChild(document.createTextNode(' '));
-        }
+        slider.appendChild(page);
     });
+    
+    sliderContainer.appendChild(slider);
+    content.appendChild(sliderContainer);
+    
+    let currentPage = 0;
+    let dotsContainer;
+    
+    // Create dot navigation if there are multiple pages
+    if (pages.length > 1) {
+        dotsContainer = document.createElement('div');
+        dotsContainer.className = 'dots-navigation';
+        
+        pages.forEach((_, pageIndex) => {
+            const dot = document.createElement('div');
+            dot.className = `dot${pageIndex === 0 ? ' active' : ''}`;
+            dot.addEventListener('click', (e) => {
+                e.stopPropagation();
+                navigateToPage(pageIndex);
+            });
+            dotsContainer.appendChild(dot);
+        });
+        
+        content.appendChild(dotsContainer);
+    }
+    
+    function navigateToPage(pageIndex) {
+        if (pageIndex < 0 || pageIndex >= pages.length) return;
+        
+        currentPage = pageIndex;
+        slider.style.transform = `translateX(-${(pageIndex * 100) / pages.length}%)`;
+        
+        // Update dots
+        if (dotsContainer) {
+            const dots = dotsContainer.getElementsByClassName('dot');
+            Array.from(dots).forEach((dot, index) => {
+                dot.classList.toggle('active', index === pageIndex);
+            });
+        }
+    }
+    
+    // Add scroll handling with debouncing
+    let isScrolling = false;
+    let lastScrollTime = 0;
+    let scrollTimeout;
+    let accumulatedDelta = 0;
+
+    sliderContainer.addEventListener('wheel', (e) => {
+        // Check if it's a horizontal scroll or shift+scroll
+        if (Math.abs(e.deltaX) > Math.abs(e.deltaY) || e.shiftKey) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Clear any existing scroll timeout
+            clearTimeout(scrollTimeout);
+            
+            const now = Date.now();
+            if (now - lastScrollTime < 250) { // Minimum time between scroll actions
+                return;
+            }
+            
+            // Accumulate scroll delta
+            accumulatedDelta += e.deltaX || (e.shiftKey ? e.deltaY : 0);
+            
+            // Only process scroll if we're not already scrolling
+            if (!isScrolling) {
+                isScrolling = true;
+                
+                // Process the accumulated delta
+                if (Math.abs(accumulatedDelta) > 50) { // Threshold for scroll navigation
+                    if (accumulatedDelta > 0 && currentPage < pages.length - 1) {
+                        navigateToPage(currentPage + 1);
+                    } else if (accumulatedDelta < 0 && currentPage > 0) {
+                        navigateToPage(currentPage - 1);
+                    }
+                    
+                    // Reset accumulated delta
+                    accumulatedDelta = 0;
+                    lastScrollTime = now;
+                }
+                
+                // Reset scroll state after animation completes
+                scrollTimeout = setTimeout(() => {
+                    isScrolling = false;
+                    accumulatedDelta = 0;
+                }, 300); // Match this with your CSS transition duration
+            }
+        }
+    }, { passive: false });
+    
+    // Add keyboard navigation for arrow keys
+    function handleKeyNavigation(e) {
+        // Only handle arrow keys if this is the current slide
+        if (index === state.currentSlideIndex) {
+            if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && pages.length > 1) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (e.key === 'ArrowLeft' && currentPage > 0) {
+                    navigateToPage(currentPage - 1);
+                } else if (e.key === 'ArrowRight' && currentPage < pages.length - 1) {
+                    navigateToPage(currentPage + 1);
+                }
+                
+                // Prevent the event from triggering vertical navigation
+                e.stopImmediatePropagation();
+                return false;
+            }
+        }
+    }
+    
+    // Add and remove keyboard listener based on slide visibility
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                if (slide.classList.contains('current')) {
+                    document.addEventListener('keydown', handleKeyNavigation);
+                } else {
+                    document.removeEventListener('keydown', handleKeyNavigation);
+                }
+            }
+        });
+    });
+    
+    observer.observe(slide, { attributes: true });
+    
+    // Add touch handling
+    let touchStartX = 0;
+    let touchEndX = 0;
+    
+    sliderContainer.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+        e.stopPropagation();
+    }, { passive: false });
+    
+    sliderContainer.addEventListener('touchmove', (e) => {
+        if (pages.length <= 1) return;
+        
+        touchEndX = e.touches[0].clientX;
+        const deltaX = touchStartX - touchEndX;
+        const percentageMoved = (deltaX / sliderContainer.offsetWidth) * 100;
+        
+        // Calculate the maximum translation based on the number of pages
+        const maxTranslation = ((pages.length - 1) * 100) / pages.length;
+        
+        // Calculate the new position
+        let newPosition = -(currentPage * 100 / pages.length) - percentageMoved;
+        
+        // Limit the translation to prevent overscrolling
+        newPosition = Math.max(-maxTranslation, Math.min(0, newPosition));
+        
+        // Apply the translation
+        slider.style.transform = `translateX(${newPosition}%)`;
+        e.preventDefault();
+    }, { passive: false });
+    
+    sliderContainer.addEventListener('touchend', (e) => {
+        if (pages.length <= 1) return;
+        
+        touchEndX = e.changedTouches[0].clientX;
+        const deltaX = touchStartX - touchEndX;
+        const swipeThreshold = sliderContainer.offsetWidth * 0.2;
+        
+        if (Math.abs(deltaX) >= swipeThreshold) {
+            if (deltaX > 0 && currentPage < pages.length - 1) {
+                navigateToPage(currentPage + 1);
+            } else if (deltaX < 0 && currentPage > 0) {
+                navigateToPage(currentPage - 1);
+            } else {
+                navigateToPage(currentPage);
+            }
+        } else {
+            navigateToPage(currentPage);
+        }
+    }, { passive: false });
 
     slide.appendChild(slideNumber);
     slide.appendChild(content);
 
-    // Add comment indicator if slide has a comment
     if (state.comments[index]) {
         const commentIndicator = document.createElement('div');
         commentIndicator.className = 'comment-indicator';
@@ -380,14 +605,27 @@ function createSlide(index) {
     return slide;
 }
 
-// Update highlighted words list
+// Update the highlighted words list with animation
 function updateHighlightedWordsList() {
     highlightedWordsList.innerHTML = '';
-    state.highlightedWords.forEach(word => {
+    const words = Array.from(state.highlightedWords);
+    
+    words.forEach(word => {
         const li = document.createElement('li');
         li.textContent = word;
+        li.style.opacity = '0';
+        li.style.transform = 'translateX(-10px)';
+        
         li.addEventListener('click', () => toggleHighlight(word));
+        
         highlightedWordsList.appendChild(li);
+        
+        // Trigger animation
+        requestAnimationFrame(() => {
+            li.style.transition = 'all 0.3s ease';
+            li.style.opacity = '1';
+            li.style.transform = 'translateX(0)';
+        });
     });
 }
 
@@ -550,7 +788,7 @@ document.addEventListener('keydown', (e) => {
     if (!slidesContainer.classList.contains('active')) return;
 
     // Prevent default behavior for navigation keys
-    if (['Space', 'Enter', 'Backspace', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+    if (['Space', 'Enter', 'Backspace', 'ArrowUp', 'ArrowDown'].includes(e.code)) {
         e.preventDefault();
     }
 
@@ -565,7 +803,6 @@ document.addEventListener('keydown', (e) => {
         // Forward navigation
         case 'Space':
         case 'Enter':
-        case 'ArrowRight':
         case 'ArrowDown':
             if (state.currentSlideIndex < state.slides.length - 1) {
                 state.currentSlideIndex++;
@@ -578,7 +815,6 @@ document.addEventListener('keydown', (e) => {
 
         // Backward navigation
         case 'Backspace':
-        case 'ArrowLeft':
         case 'ArrowUp':
             if (state.currentSlideIndex > 0) {
                 state.currentSlideIndex--;
@@ -713,4 +949,56 @@ function saveEdit() {
         renderCurrentSlide();
     }
     closeEditModal();
-} 
+}
+
+// Update the document keyboard event listener to handle vertical navigation
+document.removeEventListener('keydown', handleKeyboardNavigation); // Remove any existing listener
+
+function handleKeyboardNavigation(e) {
+    // Only handle keyboard navigation when in slides view
+    if (!slidesContainer.classList.contains('active')) return;
+
+    // Prevent default behavior for navigation keys
+    if (['Space', 'Enter', 'Backspace', 'ArrowUp', 'ArrowDown'].includes(e.code)) {
+        e.preventDefault();
+    }
+
+    // Apply the same timing constraints as scroll
+    const now = Date.now();
+    if (now - lastScrollTime < 500 || isScrolling) return;
+    
+    isScrolling = true;
+    lastScrollTime = now;
+
+    switch (e.code) {
+        // Forward navigation
+        case 'Space':
+        case 'Enter':
+        case 'ArrowDown':
+            if (state.currentSlideIndex < state.slides.length - 1) {
+                state.currentSlideIndex++;
+                renderCurrentSlide();
+                saveCurrentState();
+            } else {
+                checkSessionEnd();
+            }
+            break;
+
+        // Backward navigation
+        case 'Backspace':
+        case 'ArrowUp':
+            if (state.currentSlideIndex > 0) {
+                state.currentSlideIndex--;
+                renderCurrentSlide();
+                saveCurrentState();
+            }
+            break;
+    }
+
+    // Reset scrolling flag after animation
+    setTimeout(() => {
+        isScrolling = false;
+    }, 500);
+}
+
+document.addEventListener('keydown', handleKeyboardNavigation); 

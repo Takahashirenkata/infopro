@@ -1144,4 +1144,109 @@ h1 span::after {
 
 .slide-out-down {
     animation: slideOutDown 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.horizontal-slider-container {
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    touch-action: pan-x; /* Enable horizontal touch gestures */
+}
+
+.horizontal-slider {
+    display: flex;
+    transition: transform 0.3s ease-out;
+    will-change: transform;
+    transform: translateX(0);
+    height: auto;
+}
+
+.word-page {
+    flex: 0 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 15px;
+    box-sizing: border-box;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.dots-navigation {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 20px;
+    padding: 10px;
+    width: 100%;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--text-secondary);
+    opacity: 0.3;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.dot.active {
+    opacity: 1;
+    background-color: var(--primary-color);
+    transform: scale(1.2);
+}
+
+/* Ensure words are properly styled within pages */
+.word-page .word {
+    display: inline-block;
+    padding: 4px 8px;
+    margin: 2px;
+    border-radius: 4px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    background-color: transparent;
+    transition: all 0.2s ease;
+    font-size: 1.1rem;
+    line-height: 1.5;
+}
+
+.word-page .word.highlighted {
+    background: linear-gradient(120deg, #FEF9C3 0%, #FEF08A 100%);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+    .word-page {
+        padding: 10px;
+        gap: 6px;
+    }
+
+    .word-page .word {
+        padding: 3px 6px;
+        font-size: 1rem;
+    }
+
+    .dots-navigation {
+        margin-top: 15px;
+        gap: 6px;
+    }
+
+    .dot {
+        width: 6px;
+        height: 6px;
+    }
+}
+
+/* Prevent text selection during swipes */
+.horizontal-slider-container,
+.word-page {
+    -webkit-user-select: none;
+    user-select: none;
 } 
