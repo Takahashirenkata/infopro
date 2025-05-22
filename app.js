@@ -1,3 +1,29 @@
+// Viewport adjustment for mobile browsers
+function adjustViewportHeight() {
+    // Get the actual viewport height
+    const vh = window.innerHeight * 0.01;
+    // Set the --vh custom property to the root of the document
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+
+    // Check if running on Android Chrome
+    if (navigator.userAgent.includes('Android') && navigator.userAgent.includes('Chrome')) {
+        // Get the height of the Chrome UI elements
+        const chromeToolbarHeight = window.outerHeight - window.innerHeight;
+        
+        // Set custom properties for Chrome UI adjustments
+        document.documentElement.style.setProperty('--chrome-top', `${chromeToolbarHeight}px`);
+        document.documentElement.style.setProperty('--safe-area-inset-top', `env(safe-area-inset-top, ${chromeToolbarHeight}px)`);
+        document.documentElement.style.setProperty('--safe-area-inset-bottom', 'env(safe-area-inset-bottom, 0px)');
+    }
+}
+
+// Call on initial load
+adjustViewportHeight();
+
+// Update on resize and orientation change
+window.addEventListener('resize', adjustViewportHeight);
+window.addEventListener('orientationchange', adjustViewportHeight);
+
 // Register Service Worker
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {

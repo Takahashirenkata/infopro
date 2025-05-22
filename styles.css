@@ -1,15 +1,34 @@
 :root {
-    --primary-color: #6366F1;
+    --primary-color: #4A90E2;
     --primary-dark: #4F46E5;
-    --secondary-color: #0F172A;
+    --secondary-color: #2C3E50;
     --accent-color: #8B5CF6;
-    --success-color: #22C55E;
+    --success-color: #2ECC71;
     --background-light: #F8FAFC;
     --text-primary: #1E293B;
     --text-secondary: #64748B;
     --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --background-color: #F5F6FA;
+    --text-color: #2C3E50;
+    --border-color: #E1E8ED;
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --border-radius-sm: 4px;
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+    --font-size-sm: 0.875rem;
+    --font-size-md: 1rem;
+    --font-size-lg: 1.25rem;
+    --font-size-xl: 1.5rem;
+    --vh: 1vh;
+    --chrome-top: 0px;
+    --safe-area-inset-top: env(safe-area-inset-top, 0px);
+    --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 * {
@@ -23,13 +42,15 @@ body {
     line-height: 1.6;
     color: var(--text-primary);
     background: linear-gradient(135deg, #F8FAFC 0%, #EEF2FF 100%);
-    min-height: 100vh;
+    min-height: calc(100 * var(--vh));
+    padding-top: var(--safe-area-inset-top);
+    padding-bottom: var(--safe-area-inset-bottom);
 }
 
 .page {
     display: none;
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: calc(100 * var(--vh) - var(--chrome-top));
     position: fixed;
     top: 0;
     left: 0;
@@ -214,22 +235,23 @@ h1 span::after {
     top: 0;
     left: 0;
     width: 100vw;
-    height: 100vh;
+    height: calc(100 * var(--vh) - var(--chrome-top));
     overflow: hidden;
     -webkit-overflow-scrolling: touch; /* Enable smooth scrolling on iOS */
     overscroll-behavior: none; /* Prevent bounce effect on mobile */
     touch-action: none; /* Disable browser handling of all panning and zooming gestures */
-    padding-bottom: env(safe-area-inset-bottom, 0);
+    padding-top: var(--safe-area-inset-top);
+    padding-bottom: calc(var(--safe-area-inset-bottom) + var(--spacing-xl));
 }
 
 /* Slide Styles */
 .slide {
     width: 100%;
-    height: 100vh;
+    height: calc(100 * var(--vh) - var(--chrome-top) - var(--spacing-xl) * 2);
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 2rem;
+    padding: var(--spacing-xl);
     position: absolute;
     top: 0;
     left: 0;
@@ -237,7 +259,6 @@ h1 span::after {
     transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     will-change: transform;
     touch-action: none; /* Disable browser handling of all panning and zooming gestures */
-    padding: 4rem 1rem calc(5rem + env(safe-area-inset-bottom, 1rem)) 1rem;
 }
 
 .slide.previous {
@@ -873,13 +894,13 @@ h1 span::after {
 .modal {
     display: none;
     position: fixed;
-    top: 0;
+    top: var(--safe-area-inset-top);
     left: 0;
     width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
+    height: calc(100 * var(--vh) - var(--chrome-top));
+    background-color: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(5px);
-    z-index: 1000;
+    z-index: 2000;
     opacity: 0;
     transition: opacity 0.3s ease;
 }
