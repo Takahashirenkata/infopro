@@ -1,3 +1,30 @@
+// Initialize fullscreen mode
+function initFullscreen() {
+    // Request fullscreen mode when the app starts
+    document.addEventListener('DOMContentLoaded', () => {
+        // Check if the app is running in standalone mode (added to home screen)
+        if (window.matchMedia('(display-mode: standalone)').matches ||
+            window.navigator.standalone === true) {
+            
+            // Request fullscreen on user interaction
+            document.body.addEventListener('click', () => {
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen();
+                } else if (document.documentElement.webkitRequestFullscreen) {
+                    document.documentElement.webkitRequestFullscreen();
+                } else if (document.documentElement.mozRequestFullScreen) {
+                    document.documentElement.mozRequestFullScreen();
+                } else if (document.documentElement.msRequestFullscreen) {
+                    document.documentElement.msRequestFullscreen();
+                }
+            }, { once: true }); // Only trigger once
+        }
+    });
+}
+
+// Call initialization
+initFullscreen();
+
 // State management
 let state = {
     slides: [],
