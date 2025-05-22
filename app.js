@@ -568,43 +568,63 @@ function createSlide(index) {
     
     observer.observe(slide, { attributes: true });
     
-    // Add touch handling
+    // Add touch handling with better gesture detection
     let touchStartX = 0;
+    let touchStartY = 0;
     let touchEndX = 0;
-    
+    let touchEndY = 0;
+    let isHorizontalSwipe = false;
+    let hasMovedEnough = false;
+
     sliderContainer.addEventListener('touchstart', (e) => {
         touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        isHorizontalSwipe = false;
+        hasMovedEnough = false;
         e.stopPropagation();
-    }, { passive: false });
-    
+    }, { passive: true });
+
     sliderContainer.addEventListener('touchmove', (e) => {
         if (pages.length <= 1) return;
-        
+
         touchEndX = e.touches[0].clientX;
+        touchEndY = e.touches[0].clientY;
+
         const deltaX = touchStartX - touchEndX;
-        const percentageMoved = (deltaX / sliderContainer.offsetWidth) * 100;
-        
-        // Calculate the maximum translation based on the number of pages
-        const maxTranslation = ((pages.length - 1) * 100) / pages.length;
-        
-        // Calculate the new position
-        let newPosition = -(currentPage * 100 / pages.length) - percentageMoved;
-        
-        // Limit the translation to prevent overscrolling
-        newPosition = Math.max(-maxTranslation, Math.min(0, newPosition));
-        
-        // Apply the translation
-        slider.style.transform = `translateX(${newPosition}%)`;
-        e.preventDefault();
+        const deltaY = touchStartY - touchEndY;
+
+        // Determine if this is a horizontal or vertical swipe
+        if (!hasMovedEnough && (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10)) {
+            hasMovedEnough = true;
+            isHorizontalSwipe = Math.abs(deltaX) > Math.abs(deltaY);
+        }
+
+        // Only handle horizontal swipes
+        if (isHorizontalSwipe) {
+            e.preventDefault();
+            const percentageMoved = (deltaX / sliderContainer.offsetWidth) * 100;
+            
+            // Calculate the maximum translation based on the number of pages
+            const maxTranslation = ((pages.length - 1) * 100) / pages.length;
+            
+            // Calculate the new position
+            let newPosition = -(currentPage * 100 / pages.length) - percentageMoved;
+            
+            // Limit the translation to prevent overscrolling
+            newPosition = Math.max(-maxTranslation, Math.min(0, newPosition));
+            
+            // Apply the translation
+            slider.style.transform = `translateX(${newPosition}%)`;
+        }
     }, { passive: false });
-    
+
     sliderContainer.addEventListener('touchend', (e) => {
-        if (pages.length <= 1) return;
-        
+        if (pages.length <= 1 || !isHorizontalSwipe) return;
+
         touchEndX = e.changedTouches[0].clientX;
         const deltaX = touchStartX - touchEndX;
         const swipeThreshold = sliderContainer.offsetWidth * 0.2;
-        
+
         if (Math.abs(deltaX) >= swipeThreshold) {
             if (deltaX > 0 && currentPage < pages.length - 1) {
                 navigateToPage(currentPage + 1);
@@ -615,6 +635,11 @@ function createSlide(index) {
             }
         } else {
             navigateToPage(currentPage);
+        }
+
+        // Prevent vertical slide navigation if this was a horizontal swipe
+        if (isHorizontalSwipe) {
+            e.stopPropagation();
         }
     }, { passive: false });
 
