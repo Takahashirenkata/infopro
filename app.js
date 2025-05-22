@@ -1,29 +1,3 @@
-// Viewport adjustment for mobile browsers
-function adjustViewportHeight() {
-    // Get the actual viewport height
-    const vh = window.innerHeight * 0.01;
-    // Set the --vh custom property to the root of the document
-    document.documentElement.style.setProperty('--vh', `${vh}px`);
-
-    // Check if running on Android Chrome
-    if (navigator.userAgent.includes('Android') && navigator.userAgent.includes('Chrome')) {
-        // Get the height of the Chrome UI elements
-        const chromeToolbarHeight = window.outerHeight - window.innerHeight;
-        
-        // Set custom properties for Chrome UI adjustments
-        document.documentElement.style.setProperty('--chrome-top', `${chromeToolbarHeight}px`);
-        document.documentElement.style.setProperty('--safe-area-inset-top', `env(safe-area-inset-top, ${chromeToolbarHeight}px)`);
-        document.documentElement.style.setProperty('--safe-area-inset-bottom', 'env(safe-area-inset-bottom, 0px)');
-    }
-}
-
-// Call on initial load
-adjustViewportHeight();
-
-// Update on resize and orientation change
-window.addEventListener('resize', adjustViewportHeight);
-window.addEventListener('orientationchange', adjustViewportHeight);
-
 // Register Service Worker
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -41,47 +15,59 @@ if ('serviceWorker' in navigator) {
 function initFullscreen() {
     // Request fullscreen mode when the app starts
     document.addEventListener('DOMContentLoaded', () => {
-        // Check if the app is running in standalone mode (added to home screen)
-        if (window.matchMedia('(display-mode: standalone)').matches ||
-            window.navigator.standalone === true) {
-            
-            // Request fullscreen on user interaction
-            document.body.addEventListener('click', () => {
-                if (document.documentElement.requestFullscreen) {
-                    document.documentElement.requestFullscreen();
-                } else if (document.documentElement.webkitRequestFullscreen) {
-                    document.documentElement.webkitRequestFullscreen();
-                } else if (document.documentElement.mozRequestFullScreen) {
-                    document.documentElement.mozRequestFullScreen();
-                } else if (document.documentElement.msRequestFullscreen) {
-                    document.documentElement.msRequestFullscreen();
-                }
-            }, { once: true }); // Only trigger once
+        // Try to request fullscreen immediately
+        const requestFullscreen = () => {
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen();
+            } else if (document.documentElement.webkitRequestFullscreen) {
+                document.documentElement.webkitRequestFullscreen();
+            } else if (document.documentElement.mozRequestFullScreen) {
+                document.documentElement.mozRequestFullScreen();
+            } else if (document.documentElement.msRequestFullscreen) {
+                document.documentElement.msRequestFullscreen();
+            }
+        };
+
+        // Try immediately
+        requestFullscreen();
+
+        // Also try on first user interaction (as backup)
+        document.body.addEventListener('click', requestFullscreen, { once: true });
+
+        // Handle screen orientation changes
+        if (screen.orientation && screen.orientation.lock) {
+            screen.orientation.lock('portrait')
+                .catch(err => console.log('Orientation lock failed:', err));
         }
-    });
 
-    // Handle screen orientation changes
-    if (screen.orientation && screen.orientation.lock) {
-        screen.orientation.lock('portrait')
-            .catch(err => console.log('Orientation lock failed:', err));
-    }
-
-    // Handle Android Chrome's system UI
-    if (navigator.userAgent.includes('Android')) {
-        window.addEventListener('load', () => {
+        // Handle Android Chrome's system UI
+        if (navigator.userAgent.includes('Android')) {
             // Add padding for system UI
             document.body.style.paddingTop = 'env(safe-area-inset-top)';
             document.body.style.paddingBottom = 'env(safe-area-inset-bottom)';
-        });
 
-        // Reapply fullscreen on resize
-        window.addEventListener('resize', () => {
-            if (document.fullscreenElement === null) {
-                document.documentElement.requestFullscreen()
-                    .catch(err => console.log('Fullscreen request failed:', err));
-            }
-        });
-    }
+            // Reapply fullscreen on resize
+            window.addEventListener('resize', () => {
+                if (document.fullscreenElement === null) {
+                    requestFullscreen();
+                }
+            });
+
+            // Try to reapply fullscreen periodically for the first few seconds
+            let attempts = 0;
+            const maxAttempts = 5;
+            const interval = setInterval(() => {
+                if (attempts >= maxAttempts) {
+                    clearInterval(interval);
+                    return;
+                }
+                if (document.fullscreenElement === null) {
+                    requestFullscreen();
+                }
+                attempts++;
+            }, 1000);
+        }
+    });
 }
 
 // Call initialization
